@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test</title>
+  </head>
+  <body>
+    <canvas
+      id="canvas"
+      width="800"
+      height="600"
+    ></canvas>
+    <script>
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+
+      const size = 40;
+
+      const neurons = [
+        { x: 10, y: 10 },
+        { x: 100, y: 100 },
+        { x: 10, y: 100 }
+      ];
+
+      const lines = [
+        { from: 0, to: 1 },
+        { from: 1, to: 2 }
+      ];
+
+      ctx.fillStyle = 'red';
+      for (let neuron of neurons) {
+        ctx.fillRect(neuron.x, neuron.y, size, size);
+      }
+
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 2;
+      for (let line of lines) {
+        const start = neurons[line.from];
+        const x1 = start.x + size / 2;
+        const y1 = start.y + size / 2;
+
+        const end = neurons[line.to];
+        const x2 = end.x + size / 2;
+        const y2 = end.y + size / 2;
+
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    </script>
+  </body>
+</html>
