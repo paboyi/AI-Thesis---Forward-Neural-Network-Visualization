@@ -6,46 +6,120 @@
   <body>
     <canvas
       id="canvas"
-      width="800"
-      height="600"
+      width="1500"
+      height="1500"
+      style="border: 2px solid black"
     ></canvas>
     <script>
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
 
-      const size = 40;
+      const size = 40; // size of square (w & h)
 
-      const neurons = [
-        { x: 10, y: 10 },
-        { x: 100, y: 100 },
-        { x: 10, y: 100 }
-      ];
+      function renderNetwork(inputCount, hiddenLayers, outputCount){
+        totalLayers = 1 + hiddenLayers.length + 1; 
+        console.log('totalLayers', totalLayers);
 
-      const lines = [
-        { from: 0, to: 1 },
-        { from: 1, to: 2 }
-      ];
+        nV = [inputCount, hiddenLayers, outputCount].flat(); //nV - neuronValues 
+        console.log('nV.flat() = ', nV);
 
-      ctx.fillStyle = 'red';
-      for (let neuron of neurons) {
-        ctx.fillRect(neuron.x, neuron.y, size, size);
+        return nV;
       }
 
+      renderNetwork(2, [3, 4, 1, 3], 2);  //! that means this returns [2,3,4,2]
+
+      // const neurons = [
+      //   { x: 10, y: 10 }, // position on canvas // also square 0
+      //   { x: 100, y: 100 },// square 1
+      //   { x: 10, y: 100 }
+      // ];
+
+
+      let neurons = [];
+      let xDistance = 10;
+      let allObjects = [];
+
+      for (i=0; i<nV.length; i++)
+      {
+        let yDistance = 10;
+        let eachObjects = [];
+
+        console.log(nV.length);
+        console.log('nV[i] = ', nV[i]);
+
+          for (p=0; p<nV[i]; p++)
+          {
+            let obj1 = {x: xDistance, y: yDistance};
+            eachObjects.push(obj1);
+            allObjects.push(obj1);
+
+            yDistance += 100;
+            console.log('inner obj = ', obj1);
+          }
+
+          neurons.push(eachObjects);
+          xDistance += 200;
+      }
+      console.log('allObjects = ', allObjects);
+      console.log('neurons = ', neurons);
+
+
+       ctx.fillStyle = 'red';
+       for (i=0; i<neurons.length; i++) {
+         for (let neuron of neurons[i]) {
+           ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
+         }
+       }
+
+
+       const lines = [];
+       for (i = 0; i < allObjects.length; i++) {
+        let l = {from: i, to: i+1};
+        lines.push(l);
+       }
+       console.log('lines = ',lines); //didn't end up using this
+
+
+      // const lines = [
+      //   { from: 0, to: 1 }, //line starting from square 0 to 1
+      //   { from: 1, to: 2 }
+      // ];
+      
       ctx.strokeStyle = 'blue';
       ctx.lineWidth = 2;
-      for (let line of lines) {
-        const start = neurons[line.from];
-        const x1 = start.x + size / 2;
-        const y1 = start.y + size / 2;
 
-        const end = neurons[line.to];
-        const x2 = end.x + size / 2;
-        const y2 = end.y + size / 2;
-
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
+      
+        
+      for (i=0; i<neurons.length-1; i++) {
+        for (j=0; j<neurons[i].length; j++) { // Stop at second-to-the-last layer
+          const start = neurons[i][j]; // Neuron in the current layer
+          const x1 = start.x + size / 2; 
+          const y1 = start.y + size / 2;
+  
+          for (let k = 0; k < neurons[i + 1].length; k++) { // Loop through next layer
+          const end = neurons[i+1][k]; // Neuron in the next layer
+          const x2 = end.x + size / 2;
+          const y2 = end.y + size / 2;
+          
+          console.log(`Connecting (x1:${x1}, y1:${y1}) to (x2:${x2}, y2:${y2})`);
+  
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+          }
+        
       }
+    }
+
+    ctx.fillStyle = 'pink'; //top blocks to cover the skeleton
+       for (i=0; i<neurons.length; i++) {
+         for (let neuron of neurons[i]) {
+           ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
+         }
+       }
+
+    
+
     </script>
   </body>
 </html>
