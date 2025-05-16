@@ -1,125 +1,87 @@
+
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Test</title>
+    <title>AI Thesis</title>
+    <link rel="icon" type="image/png" href="img/watermelon-pixel-favicon_2.PNG">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <canvas
-      id="canvas"
-      width="1500"
-      height="1500"
-      style="border: 2px solid black"
-    ></canvas>
-    <script>
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-
-      const size = 40; // size of square (w & h)
-
-      function renderNetwork(inputCount, hiddenLayers, outputCount){
-        totalLayers = 1 + hiddenLayers.length + 1; 
-        console.log('totalLayers', totalLayers);
-
-        nV = [inputCount, hiddenLayers, outputCount].flat(); //nV - neuronValues 
-        console.log('nV.flat() = ', nV);
-
-        return nV;
-      }
-
-      renderNetwork(2, [3, 4, 1, 3], 2);  //! that means this returns [2,3,4,2]
-
-      // const neurons = [
-      //   { x: 10, y: 10 }, // position on canvas // also square 0
-      //   { x: 100, y: 100 },// square 1
-      //   { x: 10, y: 100 }
-      // ];
 
 
-      let neurons = [];
-      let xDistance = 10;
-      let allObjects = [];
-
-      for (i=0; i<nV.length; i++)
-      {
-        let yDistance = 10;
-        let eachObjects = [];
-
-        console.log(nV.length);
-        console.log('nV[i] = ', nV[i]);
-
-          for (p=0; p<nV[i]; p++)
-          {
-            let obj1 = {x: xDistance, y: yDistance};
-            eachObjects.push(obj1);
-            allObjects.push(obj1);
-
-            yDistance += 100;
-            console.log('inner obj = ', obj1);
-          }
-
-          neurons.push(eachObjects);
-          xDistance += 200;
-      }
-      console.log('allObjects = ', allObjects);
-      console.log('neurons = ', neurons);
+    <div class="favOnPage"> 
+      <img src="img/watermelon-pixel-favicon_2.PNG" alt="watermelon favicon">
+    </div>
 
 
-       ctx.fillStyle = 'red';
-       for (i=0; i<neurons.length; i++) {
-         for (let neuron of neurons[i]) {
-           ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
-         }
-       }
-
-
-       const lines = [];
-       for (i = 0; i < allObjects.length; i++) {
-        let l = {from: i, to: i+1};
-        lines.push(l);
-       }
-       console.log('lines = ',lines); //didn't end up using this
-
-
-      // const lines = [
-      //   { from: 0, to: 1 }, //line starting from square 0 to 1
-      //   { from: 1, to: 2 }
-      // ];
+    <div class="theBody">
       
-      ctx.strokeStyle = 'blue';
-      ctx.lineWidth = 2;
+      <div class="questions">
+        <h2> You're about to Build & Run, your own <br> Artificial Neural Network </h2>
+        <h3> Answer a few questions before we begin.</h3>
+        <h3> This is what an ANN looks like</h3>
 
-      
-        
-      for (i=0; i<neurons.length-1; i++) {
-        for (j=0; j<neurons[i].length; j++) { // Stop at second-to-the-last layer
-          const start = neurons[i][j]; // Neuron in the current layer
-          const x1 = start.x + size / 2; 
-          const y1 = start.y + size / 2;
+        <div class="aNN">
+          <img src="img/ArtificialNeuronNetworkModel_1.png" alt="An ANN"> 
+        </div>
   
-          for (let k = 0; k < neurons[i + 1].length; k++) { // Loop through next layer
-          const end = neurons[i+1][k]; // Neuron in the next layer
-          const x2 = end.x + size / 2;
-          const y2 = end.y + size / 2;
-          
-          console.log(`Connecting (x1:${x1}, y1:${y1}) to (x2:${x2}, y2:${y2})`);
+        <div class="infoInput">
+          <h5> How many Inputs do you want to give? </h5> 
+          <form id="inputamountForm">
+            <input type="text" id="inputCount" placeholder="e.g. 3 or 5">
+          </form>
+        </div>
   
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
-          ctx.stroke();
-          }
-        
-      }
-    }
-
-    ctx.fillStyle = 'pink'; //top blocks to cover the skeleton
-       for (i=0; i<neurons.length; i++) {
-         for (let neuron of neurons[i]) {
-           ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
-         }
-       }
-
+  
+        <div class="infoHiddenLayers">
+          <h5> How many Hidden Layers do you want to have? </h5> 
+          <form id="hiddenLayerForm">
+            <input type="text" id="hiddenLayerCount" placeholder="e.g. 3, 5, 2, 1 ...">
+          </form>
+        </div>
+  
+        <div class="renderButton"> <Button id="renderbtn"> Render Network </Button></div>
+  
+      </div>
+  
+  
+  
+  
+  
+  
+  
+      <!-- Initially hidden part -->
+      <div class="toHide">
+        <div class="canvas-wrapper">
+          <canvas id="canvas"></canvas>
+        </div>
     
+    
+    
+        <form id="inputForm">
+          <label for="input">Enter input (comma-separated):</label> <br>
+          <input type="text" id="input" placeholder="Enter 3 numbers (e.g. 1, 0, 2)">
+          <button type="submit">Submit values </button>
+        </form>
+      
+        <div class="resultAndGif"> 
+          <div id="outputWarning"> </div>
+          <div id="result"> </div>
+          <div id="resultValues"> </div>
+          
+          <div id="gifDiv">
+            <img id="celebrationGif" src="img/congratulations-confetti-gif.gif" alt="Celebration GIF">
+          </div>
+        </div>
 
-    </script>
+      </div>
+
+    </div>
+
+
+    <script src="index.js"></script>
+
   </body>
 </html>
+

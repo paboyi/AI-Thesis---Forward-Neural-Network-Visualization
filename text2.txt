@@ -1,0 +1,1139 @@
+(ActivationFuntion.ts)
+
+export enum EActivationFunction {
+  SIGMOID
+}
+
+export class ActivationFunction {
+  public static sigmoid(value: number): number {
+    return 1 / (1 + Math.exp(-value));
+  }
+
+
+
+
+  public static activate(
+    activationFunction: EActivationFunction,
+    value: number
+  ): number [] {
+    switch (activationFunction) {
+      case EActivationFunction.SIGMOID:
+
+      const sigmoidValue = ActivationFunction.sigmoid(value);
+      let fired;
+      let activationValues: number [] = [];
+
+      // console.log("Sigmoid value: ", sigmoidValue);
+
+        if ( sigmoidValue > 0.6) 
+        {
+          fired = 1;
+          activationValues = [sigmoidValue, fired];
+          return activationValues;
+        }
+        else 
+        { 
+          fired = 0;
+          activationValues = [0, fired];
+          return activationValues;
+        } 
+    }
+    
+  }
+}
+
+
+- - - - - --------------------------------------------------------------------------------- - - - - - - 
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+
+
+(neuron.ts)
+
+
+import {
+  ActivationFunction,
+  EActivationFunction
+} from './activation-functions';
+
+interface INeuronOptions {
+  activationFunction: EActivationFunction;
+  previousLayerNeuronAmount: number;
+}
+
+
+
+
+
+
+export default class Neuron {
+
+  private options: INeuronOptions;
+  private weights: number[] = [];
+
+  
+  
+  
+  private initializeWeights(neuronAmount: number) {
+    this.weights = [];
+    for (let i = 0; i < neuronAmount; i++) {
+      this.weights.push(Math.random());
+    }
+  }
+
+
+
+
+  private transmissionFunction(inputs: number[]): number {
+    let result = 0;
+    let bias = 0.25;
+    for (let i = 0; i < inputs.length; i++) {
+      result += inputs[i] * this.weights[i];
+    }
+
+    // x1 * w1 + x2 * w2 + ... + xn * wn
+    return result+bias;
+  }
+
+  
+
+
+
+
+
+
+  
+  constructor(options: INeuronOptions) {
+    this.options = options;
+    this.initializeWeights(options.previousLayerNeuronAmount);
+  }
+
+
+
+
+
+
+
+
+
+
+
+  public send(inputs: number[]): number [] {
+    console.log("\n Inputs to this Neuron: ", inputs);
+
+    if (inputs.length !== this.weights.length) {
+      throw new Error('Input length does not match weight length.');
+    }
+
+    const activationValue = this.transmissionFunction(inputs);
+    console.log("\n Transmission Sum: ", activationValue);
+
+    return ActivationFunction.activate(
+      this.options.activationFunction,
+      activationValue
+    );
+  }
+  
+}
+
+
+- - - - - --------------------------------------------------------------------------------- - - - - - - 
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+
+
+(neuronal-nets.ts)
+
+
+import { EActivationFunction } from './activation-functions';
+import Neuron from './neuron';
+
+
+interface INeuronalNetOptions {
+  activationFunction: EActivationFunction;
+  inputCount: number;
+  outputCount: number;
+  hiddenLayers: number[]; // It's an Array Of the amount of neuron per hidden layer
+}
+
+
+
+
+
+
+export default class NeuronalNet {
+  private layers: Neuron[][];
+
+
+
+
+  private initializeLayers(options: INeuronalNetOptions, allNeuronLayersCombined: [[{}]]) {
+    let layers: Neuron[][] = [];
+
+    for (
+      let layerIndex = 0;
+      layerIndex < options.hiddenLayers.length + 1; // go through Hidden layers + output layer
+      layerIndex++
+    ) {
+      const neuronAmount: number =
+        layerIndex < options.hiddenLayers.length
+          ? options.hiddenLayers[layerIndex] // Neuron amount for the current hidden layer
+          : options.outputCount; // Neuron amount in the output layer
+
+      let layer: Neuron[] = [];
+
+      // console.log('neuRON Amount befor anythin ', neuronAmount);
+
+      for (let neuronIndex = 0; neuronIndex < neuronAmount; neuronIndex++) {
+
+        // console.log("allNeuronLayersCombined: ", allNeuronLayersCombined);
+
+        layer.push(
+          new Neuron({
+            activationFunction: options.activationFunction,
+            previousLayerNeuronAmount:
+              layerIndex === 0
+                ? options.inputCount
+                : allNeuronLayersCombined[layerIndex].length
+          })
+        );
+        // console.log("previous Layer Neuron Index: ", allNeuronLayersCombined[layerIndex].length);
+        // console.log('layer index here: ', layerIndex);
+      }
+
+      layers.push(layer);
+    }
+    console.log("layers: ", layers);
+
+    return layers;
+
+  }
+
+
+
+
+
+
+
+
+
+  constructor(options: INeuronalNetOptions, allNeuronLayersCombined: [[{}]]) {
+    this.layers = this.initializeLayers(options, allNeuronLayersCombined);
+  }
+
+
+
+
+
+
+
+
+
+  public send(userInputs: number[]) {
+    let inputsToNeuron: number[] = userInputs;
+    let firedNeurons: number[][] = [[]];
+
+    let eachLayerInputValues: number[][] = [];
+    eachLayerInputValues.push(userInputs); //getting the 1st Input
+
+
+  
+    for (let layerIndex = 0; layerIndex < this.layers.length; layerIndex++) {
+      
+      let outputsToNextLayer: number[] = [];
+      for (
+        let neuronIndex = 0;
+        neuronIndex < this.layers[layerIndex].length;
+        neuronIndex++
+      ) {
+        const neuron = this.layers[layerIndex][neuronIndex];
+        console.log("\n\nThis Neuron's position: ",[layerIndex],"",[neuronIndex],"");   // OR  console.log(`This is Neuron[${layerIndex}][${neuronIndex}]`);
+        console.log("This Neuron's attributes: \n", this.layers[layerIndex][neuronIndex]);
+        
+        const l = neuron.send(inputsToNeuron);
+
+        console.log(" Activation function returned: ", l);
+        outputsToNextLayer.push(l[0]);
+        (firedNeurons[layerIndex] ??= []).push(l[1]);
+      }
+      inputsToNeuron = outputsToNextLayer;
+      eachLayerInputValues.push(inputsToNeuron); //adding other inputs
+
+      console.log("\n Outputs (i.e. Inputs for the next Neural-Layer): ", inputsToNeuron);
+    }
+
+    const finalOutputs = inputsToNeuron;
+    console.log("\n\n Final Output from neural-nets.ts: \n", finalOutputs, "\n");
+    console.log("\nFiredNeurons: \n", firedNeurons);
+    console.log("\n each Layer INPUT(output) values: \n", eachLayerInputValues);
+
+
+    return {finalOutputs, firedNeurons, eachLayerInputValues}; // Just return the data for index.ts to use
+
+  }
+
+}
+
+
+- - - - - --------------------------------------------------------------------------------- - - - - - - 
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+
+
+(index.html)
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>AI Thesis</title>
+    <link rel="icon" type="image/png" href="img/watermelon-pixel-favicon_2.PNG">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+
+
+    <div class="favOnPage"> 
+      <img src="img/watermelon-pixel-favicon_2.PNG" alt="watermelon favicon">
+    </div>
+
+
+    <div class="theBody">
+      
+      <div class="questions">
+        <h2> You're about to Build & Run, your own <br> Artificial Neural Network </h2>
+        <h3> Answer a few questions before we begin.</h3>
+        <h3> This is what an ANN looks like</h3>
+
+        <div class="aNN">
+          <img src="img/ArtificialNeuronNetworkModel_1.png" alt="An ANN"> 
+        </div>
+  
+        <div class="infoInput">
+          <h5> How many Inputs do you want to give? </h5> 
+          <form id="inputamountForm">
+            <input type="text" id="inputCount" placeholder="e.g. 3 or 5">
+          </form>
+        </div>
+  
+  
+        <div class="infoHiddenLayers">
+          <h5> How many Hidden Layers do you want to have? </h5> 
+          <form id="hiddenLayerForm">
+            <input type="text" id="hiddenLayerCount" placeholder="e.g. 3, 5, 2, 1 ...">
+          </form>
+        </div>
+  
+        <div class="renderButton"> <Button id="renderbtn"> Render Network </Button></div>
+  
+      </div>
+  
+  
+  
+  
+  
+  
+  
+      <!-- Initially hidden part -->
+      <div class="toHide">
+        <div class="canvas-wrapper">
+          <canvas id="canvas"></canvas>
+        </div>
+    
+    
+    
+        <form id="inputForm">
+          <label for="input">Enter input (comma-separated):</label> <br>
+          <input type="text" id="input" placeholder="Enter 3 numbers (e.g. 1, 0, 2)">
+          <button type="submit">Submit values </button>
+        </form>
+      
+        <div class="resultAndGif"> 
+          <div id="outputWarning"> </div>
+          <div id="result"> </div>
+          <div id="resultValues"> </div>
+          
+          <div id="gifDiv">
+            <img id="celebrationGif" src="img/congratulations-confetti-gif.gif" alt="Celebration GIF">
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <script src="index.js"></script>
+
+  </body>
+</html>
+
+
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+
+
+(index.js)
+
+
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const size = 40; // size of square (w & h)
+const xSpacing = 200;
+const ySpacing = 100;
+
+let inputCount, hiddenLayers, outputCount;
+
+let neurons = [];
+
+
+
+
+document.getElementById('renderbtn').addEventListener('click', function () {
+  //Reset all old renders
+  neurons = [];
+
+
+  // <!-- Get User Values for the ANN -->
+  inputCount = parseInt(document.getElementById('inputCount').value);
+  let userHiddenLayers = document.getElementById('hiddenLayerCount').value;
+  hiddenLayers = userHiddenLayers.split(',').map(Number); 
+  outputCount = 2; 
+
+  
+  document.querySelector('.toHide').style.display = 'block';
+
+
+
+
+
+  
+
+
+
+
+    // FUNCTION 1  -- RENDER NETWORK
+  function renderNetwork(inputCount, hiddenLayers, outputCount){
+    totalLayers = 1 + hiddenLayers.length + 1; 
+
+    console.log('- - - - - - - - - - - - - - -\n- - - - - - - - - - - - - - -\n\n- - - - - - - - - - - - - - -\n'); 
+    console.log('Total Layers: ', totalLayers); // Total layers in the neural network. (Input, hidden + output layers count)
+
+    nV = [inputCount, hiddenLayers, outputCount].flat(); //nV - neuronValues // flattens the 2d array to 1d [1,[2,3],4] = [1,2,3,4]
+    console.log('nV.flat() = ', nV);
+    return nV; //returns flat array [1,2,3,4]
+    
+  }
+  renderNetwork(inputCount, hiddenLayers, outputCount); // the canvas will display columns with e.g. [1,2,3,4] neurons]
+
+
+
+
+
+
+
+
+
+
+    // FUNCTION 2  -- DYNAMIC CANVAS SIZE
+  function calculateCanvasSize(inputCount, hiddenLayers, outputCount) {
+      const totalLayers = 2 + hiddenLayers.length;
+      const layerWithMostNeurons = Math.max(inputCount, ...hiddenLayers, outputCount); // Math.max() = returns the number with the highest value // ...[3,4,5] = 3,4,5 
+
+
+      const width = totalLayers * xSpacing + size;
+      const height = layerWithMostNeurons * ySpacing + size;
+    
+      return { width, height };
+    }
+
+  const { width, height } = calculateCanvasSize(inputCount, hiddenLayers, outputCount);
+  canvas.width = width;
+  canvas.height = height;
+
+
+
+
+
+
+
+
+
+
+    // FOR-Loop 1 -- CREATE 1D & 2D NEURON ARRAYs for FUTURE WORK
+    let xDistance = 100;
+    let allObjects = []; //to gather each neuron in a 1d array // will be used to create lines
+
+for (i=0; i<nV.length; i++) // loop through flattened array
+{
+  let yDistance = 50;
+  let eachObjects = []; // to gather each neuron according to layer
+
+
+    for (p=0; p<nV[i]; p++) //loop through each layer
+    {
+      let obj1 = {x: xDistance, y: yDistance, fired: false}; // obj is a neuron. Remember these properties, x,y & false. We'll use them again
+      eachObjects.push(obj1); 
+      allObjects.push(obj1);
+
+      // Increase Height
+      yDistance += ySpacing; // or +100 if ySpacing doesn't work 
+    }
+
+    neurons.push(eachObjects); //eachObjects[] = is a single elemt of this 2D Array
+
+    // Create Space between Layers
+    xDistance += xSpacing; // or +200 if ySpacing doesn't work
+}
+console.log('allObjects = ', allObjects);
+console.log('neurons = ', neurons);
+
+
+
+
+
+
+
+
+
+
+    // DRAW LINES
+  function drawLines () {
+    
+    ctx.strokeStyle = 'rgb(210, 210, 210)'; // #acff30
+    ctx.lineWidth = 2;
+    
+     
+    for (i=0; i<neurons.length-1; i++) {
+    
+     for (j=0; j<neurons[i].length; j++) { // Stop drawing lines at second-to-the-last layer
+    
+       const start = neurons[i][j]; // Neuron in the current layer
+       const x1 = start.x + (size / 2);  //start.x. - x is a property of obj1 (a single neuron). See above
+       const y1 = start.y + (size / 2); // this ensures the lines start from the middle of each neuron
+    
+       for (let k = 0; k < neurons[i + 1].length; k++) { // Loop through next layer
+       const end = neurons[i+1][k]; // Neuron in the next layer
+       const x2 = end.x + (size / 2);
+       const y2 = end.y + (size / 2);
+       
+      //  console.log(`Connecting (x1:${x1}, y1:${y1}) to (x2:${x2}, y2:${y2})`); //A nice visualization of waht each line connects to
+    
+       ctx.moveTo(x1, y1);
+       ctx.lineTo(x2, y2);
+       ctx.stroke(); 
+       }
+     
+      }
+    }
+  }
+
+  drawLines();
+
+
+
+
+
+
+
+
+
+
+    // FUNCTION 3 -- DRAW NEURONS
+ function drawNeurons(neurons) {
+
+ for (i=0; i<neurons.length; i++) {
+   for (let neuron of neurons[i]) {
+    if (neurons[i] == neurons[0])
+    {
+      ctx.fillStyle = 'rgb(211, 211, 211)'; 
+      ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
+    }
+    else if (neurons[i] == neurons[neurons.length - 1])
+    {
+      ctx.fillStyle = 'grey';
+      ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
+
+    }
+    else 
+    {
+      ctx.fillStyle = 'rgba(172, 255, 48, 0.38)'; // Preferred Main color - #acff30
+      ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
+    }
+   }
+ } 
+}
+
+drawNeurons(neurons);
+
+
+
+
+
+
+
+
+
+
+  // UPDATE NEURONS TO SHOW FIRED & UN-FIRED NEURONS (active & inactive)
+function updateFiredNeurons(firedNeuronsFromServer) {
+  for (let layerIndex = 0; layerIndex < firedNeuronsFromServer.length; layerIndex++) {
+    for (
+      let neuronIndex = 0; 
+      neuronIndex < firedNeuronsFromServer[layerIndex].length; 
+      neuronIndex++) 
+    {
+      const didFire = firedNeuronsFromServer[layerIndex][neuronIndex] === 1;  // compares both value and type. So 1===1 (true),  0===1 (false)
+      neurons[layerIndex + 1][neuronIndex].fired = didFire;
+    }
+  }
+
+  // Clear just the neurons (squares), not the lines, & re-draw
+  for (i=0; i<neurons.length; i++) {
+    for (let neuron of neurons[i]) {
+
+         if (neurons[i] == neurons[0])
+         {
+           ctx.fillStyle = 'rgb(211, 211, 211)'; 
+           ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
+         }
+         else if (neurons[i] == neurons[neurons.length - 1])
+         {
+           ctx.fillStyle = 'grey';
+           ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
+     
+         }
+         else 
+         {
+           ctx.fillStyle = neuron.fired ? 'rgb(172, 255, 48)' : 'rgb(255, 0, 0)';
+           ctx.fillRect(neuron.x, neuron.y, size, size); //create squares (neurons)
+         }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+    // Add the OUTPUT VALUE of every NEURON to the Right
+  function addNumericalValues (inputofEachLayer) {
+    for (i=0; i<neurons.length; i++) {
+      let j = 0;
+      for (let neuron of neurons[i]) { 
+        ctx.fillStyle = 'black';
+        ctx.font = '16px Arial';
+
+        const value = inputofEachLayer[i][j];
+
+        ctx.fillText(value.toFixed(2), (neuron.x + size + 5), (neuron.y + (size/2)));
+        j++;
+      }
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+  // Handle Last USER Inputs (after the 1st RenderNetwork()) 
+const form = document.getElementById('inputForm');
+const resultDiv = document.getElementById('result');
+const resultDivValues = document.getElementById('resultValues');
+const warningDiv = document.getElementById('outputWarning');
+
+
+
+
+
+  form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const inputStr = document.getElementById('input').value;
+  const rawArray = inputStr.split(','); 
+  const inputArray = rawArray.map(x => x.trim()).map(Number);
+      console.log("inputArray: ", inputArray);
+
+
+
+
+
+  // Check for invalid input values
+  const isInvalid = inputArray.some(val => isNaN(val));
+
+  if (isInvalid || inputArray.length !== inputCount) {
+    warningDiv.innerText = `Please enter exactly ${inputCount} valid numbers separated by commas (e.g., 1,2,3)`;
+    return;
+  }
+
+  warningDiv.innerText = ''; // clear any previous warnings
+  
+
+
+
+
+  // SEND INFORMATION & AWAIT RESPONSE from the BACKEND
+      const response = await fetch('/send-input', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ input: inputArray, allNeuronLayersCombined: neurons, inputCount, hiddenLayers, outputCount })
+  })
+
+
+  const data = await response.json();
+  console.log('𓆝 𓆟 𓆞 𓆝 𓆟 𓆝 𓆟 𓆞 𓆝 𓆟 \n 𓆝 𓆟 𓆞 𓆝 𓆟 𓆝 𓆟 𓆞 𓆝 𓆟 \nReceived from server:', data);
+  console.log('Output received from server:', data.finalOutputs);
+  console.log('FiredNeurons received from server:', data.firedNeurons);
+  console.log('eachLayerInputValues received from server:', data.eachLayerInputValues);
+
+
+
+
+
+  // REDRAW CANVAS (Network) with NEW DATA from the BACKEND
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawLines();
+  updateFiredNeurons(data.firedNeurons); // redraws all Neurons, but update 'firedNeurons' to be Red
+  addNumericalValues(data.eachLayerInputValues); // add numerical output values beside neurons
+
+
+
+
+
+  // SHOW USER their final OUTPUT from the NETWORK
+    if (Array.isArray(data.finalOutputs) && data.finalOutputs.length > 0) {
+    resultDiv.innerText = 'Output: \n';
+    resultDivValues.innerText = data.finalOutputs.join(', ');
+    
+
+      // Show celebration GIF
+      const gif = document.getElementById('gifDiv');
+      gif.style.display = 'block';
+
+      // Hide GIF after 3 seconds
+      setTimeout(() => {
+        gif.style.display = 'none';
+      }, 900);
+
+    } else if (data.error) {
+    resultDiv.innerText = 'Error: ' + data.error;
+    } else {
+    resultDiv.innerText = 'No output or unexpected result.';
+    }
+  });
+
+
+});
+
+
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+
+
+(index.ts)
+
+
+import path from 'path';
+import Express from 'express';
+import bodyParser from 'body-parser';
+
+import { EActivationFunction } from './lib/neuronal-net/activation-functions';
+import NeuronalNet from './lib/neuronal-net/neuronal-net';
+
+
+
+
+
+const app = Express();
+app.use(bodyParser.json()); // to parse JSON from requests
+
+
+// Serve static files (e.g., index.html, styles.css)
+app.use(Express.static(path.join(__dirname)));
+
+
+// Serve HTML page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+
+
+
+
+
+// RECIEVED INPUT from the BROWSER
+app.post('/send-input', (req, res) => {
+  const input = req.body.input;
+  const allNeuronLayersCombined = req.body.allNeuronLayersCombined;
+  const inputCount = req.body.inputCount;
+  const hiddenLayers = req.body.hiddenLayers;
+  const outputCount = req.body.outputCount;
+
+
+  console.log('Received input from client:', " | ",input, " | ", inputCount, " | ", hiddenLayers);
+
+  try {
+
+    const nn = new NeuronalNet({
+      activationFunction: EActivationFunction.SIGMOID,
+      inputCount: inputCount,
+      outputCount: outputCount,
+      hiddenLayers: hiddenLayers 
+    }, 
+    allNeuronLayersCombined
+  );
+
+
+    const output = nn.send(input); // Process input through the network in the BACKEND  //That's why we imported functions above since this file & the backend are both (.ts) files
+    res.json(output); // Send result back to FRONTEND //Output = {finalOutputs: [...], firedNeurons: [...],  etc}
+    
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: 'Neural network error' });
+  }
+});
+
+
+
+
+
+
+// Start the Sercer
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+
+
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+
+
+(styles.css)
+
+
+/* */
+body {
+    font-family: Montserrat;
+
+    height: 100vh;
+    background: linear-gradient(-45deg, #1B1340, #31217B, #6C4ADC, #31217B);
+    background-size: 1000% 1000%;
+    animation: gradientShift 60s linear infinite;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+
+@keyframes gradientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    25% {
+        background-position: 50% 90%;
+    }
+    50% {
+        background-position: 90% 50%;
+    }
+    100% {
+        background-position: 50% 0%;
+    }
+  }
+
+
+  .favOnPage {
+    position: absolute;
+    right: 20px;
+    top: 30px;
+  }
+
+  .favOnPage img {
+    width: 6rem;
+  }
+
+
+  h2 {
+    text-transform: uppercase;
+    font-size: 2rem;
+    text-align: center;
+}
+
+
+h3 {
+    text-align: center;
+    font-style: italic;
+    font-weight: 400;
+    margin: 0;
+}
+
+
+h5 {
+    font-size: 1rem;
+    margin: 20px 0 5px 0;
+    font-weight: 500;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+.theBody {
+display: block;
+justify-content: center;
+align-items: center;
+background-color: white;
+padding: 5rem;
+width: fit-content;
+height: fit-content;
+
+border-radius: 2rem;
+border: dashed rgb(58, 11, 63) 0.2rem;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+.aNN {
+    display: flex;
+    justify-content: center;
+}
+
+
+.aNN img {
+    /* margin: 0 auto; */
+    margin-top: 20px;
+    border-radius: 0.5rem;
+    padding: 10px;
+    max-width: 40rem;
+    background-color: rgba(172, 255, 48, 0.2);
+}
+
+
+
+
+
+
+
+
+
+
+
+input { 
+    width: 40%;
+    padding: 12px 10px;
+    border-radius: 0.3rem;
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+button {
+    /* margin-left: 10px; */
+    padding: 10px 20px;
+    background-color: rgb(228, 53, 0);
+    color: white;
+    border-radius: 0.4rem;
+    border: none;
+
+    font-family: Montserrat;
+    font-weight: bolder;
+    font-size: 1.2rem;
+}
+
+button:hover {
+    background-color: rgba(228, 53, 0, 0.2);
+    color: black;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+div.toHide {
+display: none;
+width: 100%;
+}
+
+
+
+
+
+
+
+
+
+
+
+.canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+    padding: 30px;
+    background-color: rgba(172, 255, 48, 0.2);
+    border-radius: 1rem;
+}
+
+
+#canvas {
+    background-color: rgb(255, 255, 255);
+    border: 5px solid rgb(172, 255, 48);
+    border-radius: 1rem;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#inputForm {
+    margin: 50px 0 20px 0; 
+    display: block;
+}
+
+#inputForm label {
+    font-size: 1rem;
+    font-style: italic;
+    padding: 10px;
+}
+
+#inputForm input {
+    margin-top: 20px;
+    padding: 20px 20px;
+    border-radius: 0.5rem;
+
+    font-size: 1rem;
+
+    width: 30%;
+    height: auto;
+}
+
+#inputForm button {
+    margin-left: 20px;
+    background-color: rgb(172, 255, 48);
+    color: black;
+}
+
+#inputForm button:hover {
+    background-color: rgb(131, 213, 6);
+    color: white;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+.resultAndGif {
+    position: relative;
+}
+
+
+#result {
+    text-align: center;
+    font-size: 4rem;
+    color:  rgb(228, 53, 0);
+    font-weight: 900;
+}
+
+
+#outputWarning {
+    color:  rgb(228, 53, 0);
+    font-size: 2rem;
+}
+
+
+#resultValues {
+     text-align: center;
+    color:  rgb(228, 53, 0);
+    font-size: 3rem;
+}
+
+
+#gifDiv {
+    justify-content: center;
+    display: none;
+    width: 100%;
+    border-radius: 25%;
+}
+
+
+#gifDiv img {
+    position: absolute;
+    display: flex;
+    bottom: 0px;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+
+
+
+
+    mask-image: radial-gradient(ellipse at center, black 1%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 1%, transparent 75%);
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    mask-size: 100% 100%;
+    -webkit-mask-size: 100% 100%;
+}
+
+
+- - - - - --------------------------------------------------------------------------------- - - - - - -
+- - - - - --------------------------------------------------------------------------------- - - - - - -
